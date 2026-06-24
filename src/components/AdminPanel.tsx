@@ -15,6 +15,8 @@ import {
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { TAEOption, Submission } from "../types";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { 
   Lock, 
   Users, 
@@ -361,9 +363,162 @@ export default function AdminPanel({ onLogout, logoUrl }: AdminPanelProps) {
     document.body.removeChild(link);
   };
 
-  // Abrir ventana para imprimir el reporte en formato PDF limpio
+  // Abrir ventana para imprimir o descargar el reporte en formato PDF limpio
   const triggerPrintPDF = () => {
-    window.print();
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const runGeneration = (imgBase64?: string) => {
+      let startY = 15;
+
+      if (imgBase64) {
+        try {
+          // Draw logo at coordinates x=14, y=12, width=16, height=16
+          doc.addImage(imgBase64, "PNG", 14, 12, 16, 16);
+          
+          // Header banner positioned next to logo
+          doc.setFillColor(30, 41, 59);
+          doc.rect(34, 12, 162, 16, "F");
+          
+          doc.setFontSize(10);
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.text("REPORTE OFICIAL DE INSCRIPCIONES - TALLERES TAE", 115, 22, { align: "center" });
+
+          // Subtitle below the banner and logo
+          doc.setFontSize(8);
+          doc.setTextColor(107, 114, 128);
+          doc.setFont("helvetica", "normal");
+          doc.text(
+            `Generado el: ${new Date().toLocaleString("es-MX")} | Colegio México - Cristobal R. Buenrostro`,
+            14,
+            33
+          );
+          startY = 36;
+        } catch (e) {
+          console.warn("Error drawing logo inside PDF, falling back to clean text header", e);
+          imgBase64 = undefined;
+        }
+      }
+
+      if (!imgBase64) {
+        // High-end clean background banner bar at the top
+        doc.setFillColor(30, 41, 59);
+        doc.rect(14, 12, 182, 14, "F");
+        
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.text("REPORTE OFICIAL DE INSCRIPCIONES - TALLERES TAE", 105, 21, { align: "center" });
+
+        // Subtitle
+        doc.setFontSize(8);
+        doc.setTextColor(107, 114, 128);
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          `Generado el: ${new Date().toLocaleString("es-MX")} | Colegio México - Cristobal R. Buenrostro`,
+          14,
+          31
+        );
+        startY = 34;
+      }
+
+      // 1. Resumen General Table
+      autoTable(doc, {
+        startY: startY,
+        theme: "plain",
+        styles: { fontSize: 8.5, cellPadding: 2 },
+        head: [["RESUMEN GENERAL DEL SISTEMA", "CANTIDAD / PORCENTAJE"]],
+        body: [
+          ["Total de Alumnos Registrados", `${submissions.length} alumnos`],
+          ["Capacidad Máxima de Lugares", `${totalCapacity} lugares`],
+          ["Porcentaje General de Ocupación", `${totalPercentage}%`]
+        ],
+        headStyles: { fillColor: [243, 244, 246], textColor: [17, 24, 39], fontStyle: "bold" },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 90 },
+          1: { cellWidth: 92 }
+        }
+      });
+
+      // 2. Distribución de Talleres Table
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 6,
+        theme: "grid",
+        styles: { fontSize: 8.5, cellPadding: 2 },
+        head: [["OPCIÓN", "TALLERES (TAE) INCLUIDOS", "INSCRITOS / CUPO"]],
+        body: options.map(opt => [
+          opt.name,
+          opt.taes.join(" - "),
+          `${opt.filled} / ${opt.quota}`
+        ]),
+        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255], fontStyle: "bold" },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 35 },
+          1: { cellWidth: 112 },
+          2: { halign: "center", fontStyle: "bold", cellWidth: 35 }
+        }
+      });
+
+      // 3. Lista Nominal Table
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 6,
+        theme: "striped",
+        styles: { fontSize: 8, cellPadding: 2 },
+        head: [["ALUMNO", "OPCIÓN SELECCIONADA", "TALLERES (TAE) INCLUIDOS", "FECHA DE REGISTRO"]],
+        body: filteredSubmissions.map(sub => [
+          sub.studentName,
+          sub.optionName,
+          sub.taes.join(" - "),
+          new Date(sub.timestamp).toLocaleString("es-MX")
+        ]),
+        headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: "bold" },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 48 },
+          1: { fontStyle: "bold", textColor: [16, 185, 129], cellWidth: 38 },
+          2: { cellWidth: 58 },
+          3: { halign: "right", cellWidth: 38 }
+        }
+      });
+
+      // Save PDF file
+      doc.save(`Reporte_Inscripciones_TAE_${new Date().toISOString().split('T')[0]}.pdf`);
+      showNotification("Reporte PDF descargado exitosamente");
+    };
+
+    if (logoUrl) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          // Convert loaded image to base64 using canvas
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL("image/png");
+            runGeneration(dataURL);
+          } else {
+            runGeneration();
+          }
+        } catch (e) {
+          console.warn("Could not encode logo image as base64, printing clean layout", e);
+          runGeneration();
+        }
+      };
+      img.onerror = () => {
+        console.warn("Could not load logo due to CORS or bad URL, printing clean layout");
+        runGeneration();
+      };
+      img.src = logoUrl;
+    } else {
+      runGeneration();
+    }
   };
 
   // Auxiliar para notificaciones toast temporales
