@@ -1,0 +1,6 @@
+{
+  "name": "Registro de Talleres TAE",
+  "description": "Sistema de registro y selección de Trayectorias de Aprendizaje Especializante (TAE) para alumnos, con panel de administración en tiempo real y control de cupos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
