@@ -3,19 +3,24 @@ import Formulary from "./components/Formulary";
 import AdminPanel from "./components/AdminPanel";
 import { seedDefaultOptionsIfEmpty, db } from "./firebase";
 import { doc, onSnapshot } from "firebase/firestore";
-import { GraduationCap, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 
 export default function App() {
   const [view, setView] = useState<"student" | "admin">("student");
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [instructions, setInstructions] = useState<string>("");
+  const [instructionsTitle, setInstructionsTitle] = useState<string>("");
 
-  // Al montar la aplicación, inicializamos las opciones por defecto si están vacías y cargamos configuración de logo
+  // Al montar la aplicación, inicializamos las opciones por defecto si están vacías y cargamos configuración de logo e instrucciones
   useEffect(() => {
     seedDefaultOptionsIfEmpty();
 
     const unsubscribe = onSnapshot(doc(db, "settings", "general"), (snapshot) => {
       if (snapshot.exists()) {
-        setLogoUrl(snapshot.data().logoUrl || "");
+        const data = snapshot.data();
+        setLogoUrl(data.logoUrl || "");
+        setInstructions(data.instructions || "");
+        setInstructionsTitle(data.instructionsTitle || "");
       }
     }, (err) => {
       console.error("Error al escuchar configuraciones:", err);
@@ -26,30 +31,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
-      {/* Barra de Navegación Superior (Se oculta al Imprimir) */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-xs no-print">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo y Nombre del Colegio */}
-            <div className="flex items-center gap-3">
-              {logoUrl ? (
-                <img src={logoUrl} className="h-10 w-auto object-contain rounded-lg" alt="Logo" referrerPolicy="no-referrer" />
-              ) : (
-                <div className="h-10 w-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-500/10">
-                  <GraduationCap className="h-5.5 w-5.5" />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Área de Contenido Principal */}
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {view === "student" ? (
-          <Formulary logoUrl={logoUrl} />
+          <Formulary logoUrl={logoUrl} instructions={instructions} instructionsTitle={instructionsTitle} />
         ) : (
-          <AdminPanel onLogout={() => setView("student")} logoUrl={logoUrl} />
+          <AdminPanel onLogout={() => setView("student")} logoUrl={logoUrl} instructions={instructions} instructionsTitle={instructionsTitle} />
         )}
       </main>
 

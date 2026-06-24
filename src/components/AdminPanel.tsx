@@ -43,9 +43,11 @@ import { motion } from "motion/react";
 interface AdminPanelProps {
   onLogout?: () => void;
   logoUrl?: string;
+  instructions?: string;
+  instructionsTitle?: string;
 }
 
-export default function AdminPanel({ onLogout, logoUrl }: AdminPanelProps) {
+export default function AdminPanel({ onLogout, logoUrl, instructions, instructionsTitle }: AdminPanelProps) {
   // Estado de Autenticación de Admin
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState("");
@@ -63,8 +65,10 @@ export default function AdminPanel({ onLogout, logoUrl }: AdminPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOptionId, setFilterOptionId] = useState<string>("all");
 
-  // Identidad del logotipo
+  // Identidad del logotipo y de instrucciones
   const [newLogoUrl, setNewLogoUrl] = useState(logoUrl || "");
+  const [newInstructions, setNewInstructions] = useState(instructions || "");
+  const [newInstructionsTitle, setNewInstructionsTitle] = useState(instructionsTitle || "");
 
   // Sincronizar logotipo desde props
   useEffect(() => {
@@ -72,6 +76,20 @@ export default function AdminPanel({ onLogout, logoUrl }: AdminPanelProps) {
       setNewLogoUrl(logoUrl);
     }
   }, [logoUrl]);
+
+  // Sincronizar instrucciones desde props
+  useEffect(() => {
+    if (instructions !== undefined) {
+      setNewInstructions(instructions);
+    }
+  }, [instructions]);
+
+  // Sincronizar título de instrucciones desde props
+  useEffect(() => {
+    if (instructionsTitle !== undefined) {
+      setNewInstructionsTitle(instructionsTitle);
+    }
+  }, [instructionsTitle]);
 
   // Estados de Edición/Creación de Opciones
   const [editingOption, setEditingOption] = useState<TAEOption | null>(null);
@@ -998,6 +1016,79 @@ export default function AdminPanel({ onLogout, logoUrl }: AdminPanelProps) {
                 <img src={logoUrl} className="h-8 w-auto object-contain bg-white p-1 rounded border border-gray-200" alt="Logo Vista Previa" referrerPolicy="no-referrer" />
               </div>
             )}
+          </div>
+
+          {/* Configuración de Instrucciones del Formulario */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-display font-bold text-gray-950">Instrucciones Especiales del Formulario</h3>
+                <p className="text-xs text-gray-500 font-sans">Escribe las instrucciones o avisos especiales que se mostrarán en la parte superior del formulario de los alumnos (entre el nombre y la selección de talleres).</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Título de las Instrucciones</label>
+                <input
+                  type="text"
+                  value={newInstructionsTitle}
+                  onChange={(e) => setNewInstructionsTitle(e.target.value)}
+                  className="block w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-sans mb-1"
+                  placeholder="Ej. Instrucciones de Registro"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Instrucciones</label>
+                <textarea
+                  value={newInstructions}
+                  onChange={(e) => setNewInstructions(e.target.value)}
+                  rows={4}
+                  className="block w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-sans leading-relaxed"
+                  placeholder="Escribe aquí las instrucciones de registro para los alumnos..."
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                {(instructions || instructionsTitle) && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await setDoc(doc(db, "settings", "general"), { instructions: "", instructionsTitle: "" }, { merge: true });
+                        setNewInstructions("");
+                        setNewInstructionsTitle("");
+                        showNotification("Instrucciones removidas correctamente");
+                      } catch (err) {
+                        alert("Error al restablecer las instrucciones.");
+                      }
+                    }}
+                    className="px-3 py-2 border border-gray-200 text-xs font-semibold rounded-lg text-gray-500 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Borrar Todo
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await setDoc(doc(db, "settings", "general"), { 
+                        instructions: newInstructions.trim(),
+                        instructionsTitle: newInstructionsTitle.trim()
+                      }, { merge: true });
+                      showNotification("Instrucciones actualizadas correctamente");
+                    } catch (err) {
+                      alert("Error al guardar las instrucciones.");
+                    }
+                  }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-sm"
+                >
+                  Guardar Instrucciones
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Botón de Agregar Nueva Opción */}

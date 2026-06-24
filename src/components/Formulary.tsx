@@ -17,7 +17,6 @@ import {
   Users, 
   Check, 
   RefreshCw, 
-  Sparkles,
   ChevronRight
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -25,9 +24,11 @@ import { motion } from "motion/react";
 interface FormularyProps {
   onRegisterSuccess?: (studentName: string, selectedOption: TAEOption) => void;
   logoUrl?: string;
+  instructions?: string;
+  instructionsTitle?: string;
 }
 
-export default function Formulary({ onRegisterSuccess, logoUrl }: FormularyProps) {
+export default function Formulary({ onRegisterSuccess, logoUrl, instructions, instructionsTitle }: FormularyProps) {
   const [options, setOptions] = useState<TAEOption[]>([]);
   const [studentName, setStudentName] = useState("");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -236,16 +237,6 @@ export default function Formulary({ onRegisterSuccess, logoUrl }: FormularyProps
       <form onSubmit={handleSubmit} className="space-y-4" id="tae-form">
         {/* Sección: Datos del Alumno */}
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-4 sm:p-6">
-          <div className="flex items-center gap-2.5 mb-4 border-b border-gray-100 pb-3">
-            <div className="h-8 w-8 bg-emerald-50 rounded-lg flex items-center justify-center">
-              <User className="h-4.5 w-4.5 text-emerald-600" />
-            </div>
-            <div>
-              <h3 className="text-base font-display font-semibold text-gray-900">Datos Personales</h3>
-              <p className="text-[10px] text-gray-400 font-sans">Introduce tu información de registro</p>
-            </div>
-          </div>
-
           <div>
             <label htmlFor="student-name" className="block text-xs font-semibold text-gray-600 mb-1.5">
               Nombre Completo del Alumno <span className="text-red-500">*</span>
@@ -261,12 +252,24 @@ export default function Formulary({ onRegisterSuccess, logoUrl }: FormularyProps
                 value={studentName}
                 onChange={(e) => setStudentName(e.target.value)}
                 required
-                className="block w-full pl-9 pr-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-sans"
-                placeholder="Ej. Juan Pérez García"
+                className="block w-full pl-9 pr-3 py-2.5 text-base text-gray-800 placeholder-gray-400 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-sans"
+                placeholder="Ej. Mariana del Toro"
               />
             </div>
           </div>
         </div>
+
+        {/* Cuadro de Instrucciones */}
+        {instructions && (
+          <div className="bg-emerald-50/40 border border-emerald-100/70 rounded-2xl p-4 sm:p-5 text-gray-700 text-sm leading-relaxed font-sans">
+            <div>
+              <h4 className="font-semibold text-emerald-950 text-xs sm:text-sm mb-1 uppercase tracking-wider font-mono">
+                {instructionsTitle || "Instrucciones de Registro"}
+              </h4>
+              <div className="whitespace-pre-wrap text-emerald-800 text-xs sm:text-sm leading-relaxed">{instructions}</div>
+            </div>
+          </div>
+        )}
 
         {/* Sección: Opciones de TAE */}
         <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-4 sm:p-6">
@@ -304,7 +307,6 @@ export default function Formulary({ onRegisterSuccess, logoUrl }: FormularyProps
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h4 className="text-base font-display font-bold text-gray-900 leading-tight">{option.name}</h4>
-                        <span className="text-[10px] text-gray-400 font-sans uppercase font-medium tracking-wide">Paquete TAE</span>
                       </div>
                       
                       {/* Control Selector / Badge */}
