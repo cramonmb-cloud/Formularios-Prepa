@@ -10,7 +10,8 @@ import {
   runTransaction,
   query,
   orderBy,
-  getDocs
+  getDocs,
+  setDoc
 } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../firebase";
 import { TAEOption, Submission } from "../types";
@@ -39,9 +40,10 @@ import { motion } from "motion/react";
 
 interface AdminPanelProps {
   onLogout?: () => void;
+  logoUrl?: string;
 }
 
-export default function AdminPanel({ onLogout }: AdminPanelProps) {
+export default function AdminPanel({ onLogout, logoUrl }: AdminPanelProps) {
   // Estado de Autenticación de Admin
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState("");
@@ -59,14 +61,27 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOptionId, setFilterOptionId] = useState<string>("all");
 
+  // Identidad del logotipo
+  const [newLogoUrl, setNewLogoUrl] = useState(logoUrl || "");
+
+  // Sincronizar logotipo desde props
+  useEffect(() => {
+    if (logoUrl !== undefined) {
+      setNewLogoUrl(logoUrl);
+    }
+  }, [logoUrl]);
+
   // Estados de Edición/Creación de Opciones
   const [editingOption, setEditingOption] = useState<TAEOption | null>(null);
   const [isCreatingOption, setIsCreatingOption] = useState(false);
-  const [optionForm, setOptionForm] = useState({
+  const [optionForm, setOptionForm] = useState<{
+    name: string;
+    quota: number;
+    taes: string[];
+  }>({
     name: "",
-    tae1: "",
-    tae2: "",
-    quota: 20
+    quota: 20,
+    taes: ["", ""]
   });
 
   // Estado de Diálogo de Confirmación de Borrado Completo
@@ -152,9 +167,8 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
     setEditingOption(option);
     setOptionForm({
       name: option.name,
-      tae1: option.taes[0] || "",
-      tae2: option.taes[1] || "",
-      quota: option.quota
+      quota: option.quota,
+      taes: option.taes && option.taes.length > 0 ? [...option.taes] : ["", ""]
     });
     setIsCreatingOption(false);
   };
@@ -164,9 +178,8 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
     setEditingOption(null);
     setOptionForm({
       name: `Opción ${String.fromCharCode(65 + options.length)}`, // Autogenera letra siguiente
-      tae1: "",
-      tae2: "",
-      quota: 20
+      quota: 20,
+      taes: ["", ""]
     });
     setIsCreatingOption(true);
   };
@@ -174,12 +187,19 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
   // Guardar creación o edición
   const saveOption = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!optionForm.name.trim() || !optionForm.tae1.trim() || !optionForm.tae2.trim()) {
-      alert("Por favor completa el nombre de la opción y ambos talleres (TAE).");
+    
+    const cleanTaes = optionForm.taes.map(t => t.trim()).filter(t => t !== "");
+    
+    if (!optionForm.name.trim()) {
+      alert("Por favor completa el nombre de la opción.");
       return;
     }
 
-    const taesArray = [optionForm.tae1.trim(), optionForm.tae2.trim()];
+    if (cleanTaes.length === 0) {
+      alert("Por favor registra al menos un taller (TAE) para esta opción.");
+      return;
+    }
+
     const quotaVal = Number(optionForm.quota);
 
     if (isNaN(quotaVal) || quotaVal <= 0) {
@@ -189,12 +209,12 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
 
     try {
       if (isCreatingOption) {
-        // Crear nueva opción
+        // Crear nueva opción usando setDoc
         const newId = `option_${Date.now()}`;
-        await updateDoc(doc(db, "options", newId), {
+        await setDoc(doc(db, "options", newId), {
           id: newId,
           name: optionForm.name.trim(),
-          taes: taesArray,
+          taes: cleanTaes,
           quota: quotaVal,
           filled: 0
         });
@@ -203,7 +223,7 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
         // Editar opción existente
         await updateDoc(doc(db, "options", editingOption.id), {
           name: optionForm.name.trim(),
-          taes: taesArray,
+          taes: cleanTaes,
           quota: quotaVal
         });
         showNotification("Opción actualizada exitosamente");
@@ -313,15 +333,14 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
     }
 
     // Cabeceras de las columnas
-    const headers = ["ID Registro", "Nombre del Alumno", "Opción Seleccionada", "Taller 1 (TAE)", "Taller 2 (TAE)", "Fecha de Registro"];
+    const headers = ["ID Registro", "Nombre del Alumno", "Opción Seleccionada", "Talleres (TAE)", "Fecha de Registro"];
     
     // Contenido estructurado
     const rows = filteredSubmissions.map(sub => [
       sub.id,
       sub.studentName,
       sub.optionName,
-      sub.taes[0] || "",
-      sub.taes[1] || "",
+      sub.taes.join(" - "),
       new Date(sub.timestamp).toLocaleString("es-MX")
     ]);
 
@@ -378,16 +397,17 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 text-center"
         >
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-slate-50 border border-slate-100 mb-6 text-slate-700 shadow-sm">
-            <Lock className="h-8 w-8 text-emerald-600" />
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} className="h-16 w-auto object-contain mx-auto mb-6" alt="Logo" referrerPolicy="no-referrer" />
+          ) : (
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-slate-50 border border-slate-100 mb-6 text-slate-700 shadow-sm">
+              <Lock className="h-8 w-8 text-emerald-600" />
+            </div>
+          )}
 
-          <h2 className="text-2xl font-display font-bold text-gray-900 tracking-tight mb-2">
+          <h2 className="text-2xl font-display font-bold text-gray-900 tracking-tight mb-6">
             Panel de Administración
           </h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed font-sans">
-            Introduce el código de autorización administrativo de 6 dígitos para gestionar opciones, revisar respuestas y descargar reportes.
-          </p>
 
           <form onSubmit={handleLoginSubmit} className="space-y-4" id="admin-login-form">
             <div>
@@ -679,7 +699,7 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
                 className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
               >
                 <Printer className="h-4 w-4" />
-                <span>Exportar / Imprimir PDF</span>
+                <span>Exportar a PDF</span>
               </button>
             </div>
           </div>
@@ -759,6 +779,72 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
       {/* VISTA 3: GESTIÓN Y CONFIGURACIÓN DE TAE Y CUPOS */}
       {activeTab === "manage" && (
         <div className="space-y-6 no-print animate-fadeIn">
+          {/* Configuración de Logotipo */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-display font-bold text-gray-950">Identidad del Sistema (Logotipo URL)</h3>
+                <p className="text-xs text-gray-500 font-sans">Configura una URL de imagen para personalizar el encabezado, reportes y pantalla de éxito.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 items-end">
+              <div className="grow">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">URL del Logotipo (Imagen PNG/JPG/SVG)</label>
+                <input
+                  type="url"
+                  value={newLogoUrl}
+                  onChange={(e) => setNewLogoUrl(e.target.value)}
+                  className="block w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-mono"
+                  placeholder="https://ejemplo.com/logo.png"
+                />
+              </div>
+              <div className="flex gap-2">
+                {logoUrl && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await setDoc(doc(db, "settings", "general"), { logoUrl: "" }, { merge: true });
+                        setNewLogoUrl("");
+                        showNotification("Logotipo restablecido al predeterminado");
+                      } catch (err) {
+                        alert("Error al restablecer logotipo.");
+                      }
+                    }}
+                    className="px-3 py-2 border border-gray-200 text-xs font-semibold rounded-lg text-gray-500 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Quitar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await setDoc(doc(db, "settings", "general"), { logoUrl: newLogoUrl.trim() }, { merge: true });
+                      showNotification("Logotipo del sistema actualizado");
+                    } catch (err) {
+                      alert("Error al guardar logotipo.");
+                    }
+                  }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-sm"
+                >
+                  Guardar Logo
+                </button>
+              </div>
+            </div>
+
+            {logoUrl && (
+              <div className="pt-2 flex items-center gap-3 text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <span className="font-semibold">Vista previa del logotipo:</span>
+                <img src={logoUrl} className="h-8 w-auto object-contain bg-white p-1 rounded border border-gray-200" alt="Logo Vista Previa" referrerPolicy="no-referrer" />
+              </div>
+            )}
+          </div>
+
           {/* Botón de Agregar Nueva Opción */}
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-display font-bold text-gray-900">
@@ -824,32 +910,52 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Taller Especializante 1 (TAE)
+                <div className="md:col-span-2 space-y-3">
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                    Talleres Especializantes (TAE) Incluidos
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={optionForm.tae1}
-                    onChange={(e) => setOptionForm({ ...optionForm, tae1: e.target.value })}
-                    className="block w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Ej. Electrónica y programación"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                    Taller Especializante 2 (TAE)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={optionForm.tae2}
-                    onChange={(e) => setOptionForm({ ...optionForm, tae2: e.target.value })}
-                    className="block w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="Ej. Pensamiento matemático"
-                  />
+                  <div className="space-y-3">
+                    {optionForm.taes.map((tae, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          required
+                          value={tae}
+                          onChange={(e) => {
+                            const newTaes = [...optionForm.taes];
+                            newTaes[index] = e.target.value;
+                            setOptionForm({ ...optionForm, taes: newTaes });
+                          }}
+                          className="block w-full px-3 py-2 text-sm text-gray-800 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder={`Taller Especializante ${index + 1}`}
+                        />
+                        {optionForm.taes.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newTaes = optionForm.taes.filter((_, idx) => idx !== index);
+                              setOptionForm({ ...optionForm, taes: newTaes });
+                            }}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Quitar Taller"
+                          >
+                            <Trash2 className="h-4.5 w-4.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOptionForm({ ...optionForm, taes: [...optionForm.taes, ""] });
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-emerald-600/30 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Agregar Taller (TAE)</span>
+                  </button>
                 </div>
 
                 <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-gray-100">
@@ -997,11 +1103,16 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
 
       {/* COMPONENTE EXCLUSIVO DE IMPRESIÓN / EXPORTACIÓN PDF (Solo visible al imprimir) */}
       <div className="hidden print:block print-only space-y-8 p-6 font-sans">
-        <div className="border-b-2 border-gray-300 pb-4 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 font-display">REPORTE OFICIAL DE INSCRIPCIONES - TALLERES TAE</h1>
-          <p className="text-xs text-gray-500 font-mono uppercase mt-1">
-            Generado el: {new Date().toLocaleString("es-MX")} | Sistema de Registro Electrónico
-          </p>
+        <div className="border-b-2 border-gray-300 pb-4 flex flex-col items-center justify-center text-center gap-3">
+          {logoUrl && (
+            <img src={logoUrl} className="h-14 w-auto object-contain" alt="Logo" referrerPolicy="no-referrer" />
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 font-display">REPORTE OFICIAL DE INSCRIPCIONES - TALLERES TAE</h1>
+            <p className="text-xs text-gray-500 font-mono uppercase mt-1">
+              Generado el: {new Date().toLocaleString("es-MX")} | Sistema de Registro Electrónico
+            </p>
+          </div>
         </div>
 
         {/* Resumen General para Impresión */}
@@ -1028,7 +1139,7 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
               <div key={opt.id} className="border border-gray-100 p-3 rounded-lg flex justify-between items-center">
                 <div>
                   <span className="text-sm font-bold text-gray-800 block">{opt.name}</span>
-                  <span className="text-[10px] text-gray-500">{opt.taes.join(" y ")}</span>
+                  <span className="text-[10px] text-gray-500">{opt.taes.join(" - ")}</span>
                 </div>
                 <div className="text-right">
                   <span className="text-sm font-mono font-bold text-gray-700">{opt.filled} / {opt.quota}</span>
@@ -1056,7 +1167,7 @@ export default function AdminPanel({ onLogout }: AdminPanelProps) {
                 <tr key={sub.id} className="py-2">
                   <td className="py-2 font-semibold text-gray-900">{sub.studentName}</td>
                   <td className="py-2 font-mono font-bold text-emerald-800">{sub.optionName}</td>
-                  <td className="py-2 text-gray-600">{sub.taes.join(" y ")}</td>
+                  <td className="py-2 text-gray-600">{sub.taes.join(" - ")}</td>
                   <td className="py-2 text-right font-mono text-[10px] text-gray-500">
                     {new Date(sub.timestamp).toLocaleString("es-MX")}
                   </td>

@@ -24,9 +24,10 @@ import { motion } from "motion/react";
 
 interface FormularyProps {
   onRegisterSuccess?: (studentName: string, selectedOption: TAEOption) => void;
+  logoUrl?: string;
 }
 
-export default function Formulary({ onRegisterSuccess }: FormularyProps) {
+export default function Formulary({ onRegisterSuccess, logoUrl }: FormularyProps) {
   const [options, setOptions] = useState<TAEOption[]>([]);
   const [studentName, setStudentName] = useState("");
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -182,19 +183,19 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
         className="max-w-xl mx-auto bg-white rounded-3xl shadow-xl p-8 border border-emerald-100 text-center"
         id="success-card"
       >
+        {logoUrl && (
+          <img src={logoUrl} className="h-16 w-auto object-contain mx-auto mb-6" alt="Logo" referrerPolicy="no-referrer" />
+        )}
+        
         <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-emerald-50 mb-6 border-2 border-emerald-200">
           <CheckCircle2 className="h-12 w-12 text-emerald-600" />
         </div>
         
-        <h2 className="text-3xl font-display font-bold text-gray-900 tracking-tight mb-2">
+        <h2 className="text-3xl font-display font-bold text-gray-900 tracking-tight mb-6">
           ¡Registro Completado!
         </h2>
-        
-        <p className="text-emerald-700 font-medium text-sm flex items-center justify-center gap-1.5 mb-6">
-          <Sparkles className="h-4 w-4" /> Cupo reservado exitosamente en tiempo real
-        </p>
 
-        <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-left border border-gray-100">
+        <div className="bg-gray-50 rounded-2xl p-6 text-left border border-gray-100">
           <div className="mb-4">
             <span className="text-xs font-mono text-gray-400 block uppercase tracking-wider">Alumno</span>
             <span className="text-lg font-semibold text-gray-800 font-sans block">{successData.studentName}</span>
@@ -213,57 +214,45 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
             </div>
           </div>
         </div>
-
-        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-          Gracias por completar tu encuesta. Tu selección ha sido almacenada para el próximo semestre. Puedes cerrar esta pestaña o registrar a otro estudiante si es necesario.
-        </p>
-
-        <button
-          onClick={resetForm}
-          className="w-full inline-flex items-center justify-center px-6 py-3.5 border border-transparent text-sm font-medium rounded-xl text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer"
-          id="btn-register-another"
-        >
-          Registrar otra respuesta
-        </button>
       </motion.div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-1 sm:px-0">
       {/* Encabezado del Formulario */}
-      <div className="text-center mb-10">
-        <span className="px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full tracking-wider uppercase mb-3 inline-block font-mono">
-          Semestre Próximo
-        </span>
-        <h1 className="text-4xl font-display font-bold text-gray-900 tracking-tight sm:text-5xl mb-4">
+      <div className="text-center mb-6 flex flex-col items-center justify-center gap-2">
+        {logoUrl && (
+          <img src={logoUrl} className="h-12 sm:h-16 w-auto object-contain mx-auto" alt="Logo" referrerPolicy="no-referrer" />
+        )}
+        <h1 className="text-2xl sm:text-4xl font-display font-bold text-gray-900 tracking-tight">
           Selección de Talleres TAE
         </h1>
-        <p className="max-w-2xl mx-auto text-base text-gray-600 leading-relaxed font-sans">
-          Estimado alumno, por favor ingresa tu nombre completo y selecciona la opción de Trayectoria de Aprendizaje Especializante (TAE) de tu preferencia. Los cupos son limitados y se actualizan en tiempo real.
+        <p className="max-w-2xl mx-auto text-xs sm:text-sm text-gray-500 leading-relaxed font-sans px-2">
+          Estimado alumno, ingresa tu nombre completo y selecciona la opción de Trayectoria de Aprendizaje Especializante (TAE) de tu preferencia.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8" id="tae-form">
+      <form onSubmit={handleSubmit} className="space-y-4" id="tae-form">
         {/* Sección: Datos del Alumno */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-          <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-            <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-              <User className="h-5 w-5 text-emerald-600" />
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-4 sm:p-6">
+          <div className="flex items-center gap-2.5 mb-4 border-b border-gray-100 pb-3">
+            <div className="h-8 w-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+              <User className="h-4.5 w-4.5 text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-lg font-display font-semibold text-gray-900">Datos Personales</h3>
-              <p className="text-xs text-gray-400 font-sans">Introduce tu información de registro</p>
+              <h3 className="text-base font-display font-semibold text-gray-900">Datos Personales</h3>
+              <p className="text-[10px] text-gray-400 font-sans">Introduce tu información de registro</p>
             </div>
           </div>
 
           <div>
-            <label htmlFor="student-name" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="student-name" className="block text-xs font-semibold text-gray-600 mb-1.5">
               Nombre Completo del Alumno <span className="text-red-500">*</span>
             </label>
-            <div className="relative rounded-xl shadow-xs">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
+            <div className="relative rounded-xl shadow-2xs">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-4 w-4 text-gray-400" />
               </div>
               <input
                 type="text"
@@ -272,29 +261,25 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
                 value={studentName}
                 onChange={(e) => setStudentName(e.target.value)}
                 required
-                className="block w-full pl-11 pr-4 py-3.5 text-gray-800 placeholder-gray-400 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-sans text-base"
+                className="block w-full pl-9 pr-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all font-sans"
                 placeholder="Ej. Juan Pérez García"
               />
             </div>
-            <p className="mt-2.5 text-xs text-gray-400 flex items-center gap-1">
-              <span>Por favor ingresa tu nombre completo tal como aparece en tus documentos escolares oficiales.</span>
-            </p>
           </div>
         </div>
 
         {/* Sección: Opciones de TAE */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-          <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-            <div className="h-10 w-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-emerald-600" />
+        <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-4 sm:p-6">
+          <div className="flex items-center gap-2.5 mb-4 border-b border-gray-100 pb-3">
+            <div className="h-8 w-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+              <BookOpen className="h-4.5 w-4.5 text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-lg font-display font-semibold text-gray-900">Selección de Opción</h3>
-              <p className="text-xs text-gray-400 font-sans">Elige uno de los paquetes de TAE disponibles</p>
+              <h3 className="text-base font-display font-semibold text-gray-900">Selección de Opción</h3>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {options.map((option) => {
               const isFull = option.filled >= option.quota;
               const isSelected = selectedOptionId === option.id;
@@ -306,63 +291,63 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
                   key={option.id}
                   onClick={() => !isFull && setSelectedOptionId(option.id)}
                   id={`option-card-${option.id}`}
-                  className={`relative rounded-2xl border-2 p-6 transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
+                  className={`relative rounded-xl border-2 p-4 transition-all duration-200 cursor-pointer select-none flex flex-col justify-between ${
                     isFull
                       ? "border-gray-100 bg-gray-50/50 opacity-60 cursor-not-allowed"
                       : isSelected
-                      ? "border-emerald-600 bg-emerald-50/20 shadow-md ring-1 ring-emerald-500/20"
-                      : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                      ? "border-emerald-600 bg-emerald-50/10 shadow-xs ring-1 ring-emerald-500/10"
+                      : "border-gray-200 bg-white hover:border-gray-300"
                   }`}
                 >
                   <div>
                     {/* Encabezado Opcion */}
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h4 className="text-lg font-display font-bold text-gray-900">{option.name}</h4>
-                        <span className="text-xs text-gray-400 font-sans uppercase font-medium tracking-wide">Paquete TAE</span>
+                        <h4 className="text-base font-display font-bold text-gray-900 leading-tight">{option.name}</h4>
+                        <span className="text-[10px] text-gray-400 font-sans uppercase font-medium tracking-wide">Paquete TAE</span>
                       </div>
                       
                       {/* Control Selector / Badge */}
                       {isFull ? (
-                        <span className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 rounded-full font-mono">
+                        <span className="px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 rounded-full font-mono">
                           Lleno
                         </span>
                       ) : (
-                        <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
                           isSelected ? "border-emerald-600 bg-emerald-600" : "border-gray-300"
                         }`}>
-                          {isSelected && <Check className="h-4 w-4 text-white stroke-[3px]" />}
+                          {isSelected && <Check className="h-3 w-3 text-white stroke-[3px]" />}
                         </div>
                       )}
                     </div>
 
                     {/* Lista de Talleres */}
-                    <div className="space-y-3 mb-6 pt-1">
+                    <div className="space-y-1.5 mb-4 pt-1">
                       {option.taes.map((tae, idx) => (
-                        <div key={idx} className="flex items-start gap-2 text-sm text-gray-700 font-sans font-medium">
-                          <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${
-                            isFull ? "text-gray-400" : isSelected ? "text-emerald-600" : "text-emerald-500"
+                        <div key={idx} className="flex items-start gap-1.5 text-xs text-gray-600 font-sans">
+                          <CheckCircle2 className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${
+                            isFull ? "text-gray-300" : isSelected ? "text-emerald-600" : "text-emerald-500"
                           }`} />
-                          <span>{tae}</span>
+                          <span className="leading-tight">{tae}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Sección Inferior de Cupos */}
-                  <div className="border-t border-gray-100 pt-4 mt-auto">
-                    <div className="flex items-center justify-between text-xs font-mono text-gray-500 mb-2">
+                  <div className="border-t border-gray-100 pt-3 mt-auto">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-gray-400 mb-1.5">
                       <span className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5" />
+                        <Users className="h-3 w-3" />
                         <span>Cupo:</span>
                       </span>
-                      <span className="font-semibold text-gray-700">
+                      <span className="font-semibold text-gray-600">
                         {option.filled} / {option.quota}
                       </span>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-2">
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden mb-1.5">
                       <div 
                         className={`h-full rounded-full transition-all duration-300 ${
                           isFull 
@@ -377,12 +362,12 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
 
                     <div className="text-right">
                       {isFull ? (
-                        <span className="text-xs font-medium text-red-600 font-sans">Sin lugares</span>
+                        <span className="text-[10px] font-medium text-red-500 font-sans">Sin lugares</span>
                       ) : (
-                        <span className={`text-xs font-semibold font-sans ${
+                        <span className={`text-[10px] font-semibold font-sans ${
                           spotsAvailable <= 3 ? "text-amber-600" : "text-emerald-700"
                         }`}>
-                          {spotsAvailable} {spotsAvailable === 1 ? "lugar disponible" : "lugares disponibles"}
+                          {spotsAvailable} {spotsAvailable === 1 ? "lugar" : "lugares"}
                         </span>
                       )}
                     </div>
@@ -398,10 +383,10 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-sm text-red-700"
+            className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5 text-xs text-red-700"
             id="form-error-alert"
           >
-            <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
             <div>
               <h5 className="font-semibold font-display">Error de Registro</h5>
               <p className="mt-0.5 leading-relaxed font-sans font-medium">{error}</p>
@@ -410,26 +395,26 @@ export default function Formulary({ onRegisterSuccess }: FormularyProps) {
         )}
 
         {/* Botón de Enviar */}
-        <div className="flex justify-end pt-2">
+        <div className="pt-1">
           <button
             type="submit"
             disabled={loading}
             id="btn-submit-form"
-            className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 border border-transparent text-base font-semibold rounded-xl text-white shadow-md transition-all cursor-pointer ${
+            className={`w-full inline-flex items-center justify-center gap-1.5 px-6 py-3 border border-transparent text-sm font-semibold rounded-xl text-white shadow-xs transition-all cursor-pointer ${
               loading 
                 ? "bg-emerald-400 cursor-not-allowed" 
-                : "bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.98]"
+                : "bg-emerald-600 hover:bg-emerald-700 focus:ring-4 focus:ring-emerald-500/20 active:scale-[0.99]"
             }`}
           >
             {loading ? (
               <>
-                <RefreshCw className="h-5 w-5 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
                 <span>Procesando registro...</span>
               </>
             ) : (
               <>
                 <span>Confirmar Selección de TAE</span>
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-4 w-4" />
               </>
             )}
           </button>
